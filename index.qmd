@@ -1,7 +1,7 @@
 ---
 title: "Data Science for Public Policy"
-subtitle: "Assignment XX"
-author: "Mitchell - mcz19 & Hannah Shepard-Moore"
+subtitle: "Assignment 04"
+author: "Mitchell - mcz19 & Hannah Shepard-Moore - hms98"
 execute:
   warning: false
 format:
