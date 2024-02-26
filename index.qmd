@@ -152,14 +152,40 @@ all_longer %>%
   theme_minimal()
 ```
 
+Since we live in Northern VA, we explored the history of SNAP benefits in this area. One question we had was: "How did SNAP benefits change around the time of the 2008 recession?". The below graph shows how benefits trended before the recession in 5 'NOVA' counties and how they changed after 2008.
 ```{r}
 #snap use over time
 all_longer %>%
   filter(state == "VA",
          snap_pop >= 0,
-         population > 0) %>%
-  mutate(snap_share= snap_pop / population) %>%
+         population > 0,
+         county== "Arlington" | 
+           county== "Fairfax" |
+           county== "Fauquier" |
+           county== "Loudoun" |
+           county== "Prince William") %>%
+  mutate(ben_share= benefits / population) %>%
   ggplot(mapping= aes(x= year,
-                      y= snap_share))+
-  geom_point()
+                      y= ben_share, 
+                      color= county))+
+  geom_point()+
+  geom_line(aes(group= county))+
+  theme_light()+
+  scale_color_manual(name= "",
+                     values= c("Arlington" = "brown1",
+                               "Fairfax" = "goldenrod1",
+                               "Fauquier"= "darkolivegreen1",
+                               "Loudoun"= "dodgerblue2",
+                               "Prince William"= "mediumorchid2"),
+                     labels= c("Arlington" = "Arlington County",
+                               "Fairfax" = "Fairfax County",
+                               "Loudoun" = "Loudon County",
+                               "Fauquier" = "Fauquier County",
+                               "Prince William" = "Prince William County"))+
+  labs(title= "Northern VA counties saw a spike in SNAP benefits per capita after 2008",
+       subtitle= "SNAP benefits were trending slightly up before the recession started.",
+       caption= "Source: US Department of Agriculture",
+       x= "",
+       y= "SNAP benefits per capita")
+
 ```
