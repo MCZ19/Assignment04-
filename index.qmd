@@ -9,7 +9,9 @@ format:
     embed-resources: true
 ---
 
-The data used in this assignment comes from \_\_\_\_\_\_.
+The data used in this assignment comes from the US Department of Agriculture (USDA) Economic Research Service. The data and documentation can be found here: https://www.ers.usda.gov/data-products/supplemental-nutrition-assistance-program-snap-data-system/documentation/
+
+Below is the code used to upload and read in this data. We specified the "County" tab because the Excel data came with several tabs including notes and state-level data.
 
 ```{r}
 library(tidyverse)
@@ -18,9 +20,9 @@ county_data_2_ <- read_excel("county_data (2).xls",
     sheet = "County")
 ```
 
-Our data came in a "wide" format across years. So, we pivoted the variables of interest and merged them into a new dataset.
+Our geographic locations of interest were Arizona and Virginia. In terms of variables of interest, these were the number of people using SNAP, the benefits used by those people, and the county population. We want to examine SNAP data across years as well as within years.
 
-First, we created a subset of the data that only included data for Arizona and Virginia, two states of interest.
+The code below was used to create the geographic subset:
 
 ```{r}
 az_va <- county_data_2_ %>%  
@@ -29,6 +31,8 @@ az_va <- county_data_2_ %>%
   select(CONAME, STATE_CD, METRO, URBCODE, 
          starts_with("POP0"), starts_with("PRGNUM0"), starts_with("PRGBEN0"))
 ```
+
+Unfortunately, our data came in a "wide" format across years. So, in order to explore longitudinal data, we pivoted the variables of interest and merged them into a new dataset. 
 
 The dataset did not have unique identifier for year and county, which we wanted to be our unit of analysis, so we created a unique variable for this within the "long" dataset for each variable of interest.
 
