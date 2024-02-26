@@ -9,18 +9,20 @@ format:
     embed-resources: true
 ---
 
-The data used in this assignment comes from ______.
+The data used in this assignment comes from \_\_\_\_\_\_.
+
 ```{r}
 library(tidyverse)
 library(readxl)
-county_data_2_ <- read_excel("county_data (2).xls", 
-                             sheet = "County")
+county_data_2_ <- read_excel("data/county_data (2).xls", 
+    sheet = "County")
 View(county_data_2_)
 ```
 
-Our data came in a "wide" format across years. So, we pivoted the variables of interest and merged them into a new dataset. 
+Our data came in a "wide" format across years. So, we pivoted the variables of interest and merged them into a new dataset.
 
-First, we created a subset of the data that only included data for Arizona and Virginia, two states of interest. 
+First, we created a subset of the data that only included data for Arizona and Virginia, two states of interest.
+
 ```{r}
 az_va <- county_data_2_ %>%  
   filter(STATE_CD== "AZ" | STATE_CD== "VA") %>%  
@@ -31,6 +33,7 @@ View(az_va)
 ```
 
 The dataset did not have unique identifier for year and county, which we wanted to be our unit of analysis, so we created a unique variable for this within the "long" dataset for each variable of interest.
+
 ```{r}
 #Population per year per county
 pop_longer <- az_va %>% 
@@ -119,6 +122,7 @@ View(ben_longer)
 ```
 
 Upon creating a "long" dataset for each variable of interest, we merged these into one longitudinal dataset. Since we had to make a unique identifier for county and year to merge the long datasets, we brought back the year, state, and county variables here.
+
 ```{r}
 #merge all + add back data
 all_longer <- inner_join(x= snap_pop_longer,
@@ -132,18 +136,20 @@ all_longer <- all_longer %>%
 View(all_longer)
 ```
 
-
-
 We were interested in how the population on SNAP changed over the years.
+
 ```{r}
-library(dplyr)
-library(tidyr)
 #snap pop by county
 all_longer %>%
   filter(state == "AZ") %>%
   ggplot(mapping= aes(x= county,
                        y= snap_pop)) +
-           geom_bar(stat = "identity")
+           geom_bar(color = "blue3", fill="blue3" ,stat = "identity", width = .5) +
+  scale_y_continuous(name = "SNAP Recipients", breaks = c(100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000)) +
+  labs(title = "SNAP Population by County in Arizona",
+       subtitle = "Total SNAP Recipients by County from 2001-2009",
+       caption = "Data Source: USDA")
+  theme_minimal()
 ```
 
 ```{r}
@@ -157,9 +163,3 @@ all_longer %>%
                       y= snap_share))+
   geom_point()
 ```
-
-
-
-
-
-
