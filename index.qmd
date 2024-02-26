@@ -16,8 +16,9 @@ Below is the code used to upload and read in this data. We specified the "County
 ```{r}
 library(tidyverse)
 library(readxl)
-county_data_2_ <- read_excel("county_data (2).xls", 
+county_data_2_ <- read_excel("data/county_data (2).xls", 
     sheet = "County")
+View(county_data_2_)
 ```
 
 Our geographic locations of interest were Arizona and Virginia. In terms of variables of interest, these were the number of people using SNAP, the benefits used by those people, and the county population. We want to examine SNAP data across years as well as within years.
@@ -145,6 +146,7 @@ all_longer %>%
   scale_y_continuous(name = "SNAP Recipients", breaks = c(100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000)) +
   labs(title = "SNAP Population by County in Arizona",
        subtitle = "Total SNAP Recipients by County from 2001-2009",
+       x = "County" ,
        caption = "Data Source: USDA")
   theme_minimal()
 ```
@@ -161,6 +163,8 @@ all_longer %>%
   scale_fill_gradient(low = "white", high = "blue4") +
   labs(title = "Proportion of County Residents on SNAP in Arizona",
        subtitle = "A Greater Proportion of Apache and Navajo County Residents are on SNAP ",
+       x = "Year",
+       y = "County",
        caption = "Date Source: USDA")
   theme_light()
 ```
@@ -212,6 +216,8 @@ all_longer %>%
   geom_jitter() +
   labs(title = "Arizona Paid More in Benefits than Virginia Between 2001-2009",
        subtitle = "Arizona Counties had Substantially More Outliers Compared to the State Average",
+       x ="State" ,
+       y = "SNAP Benefits",
        caption = "Date Source: USDA")
 ```
 
