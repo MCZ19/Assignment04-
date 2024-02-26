@@ -14,9 +14,8 @@ The data used in this assignment comes from \_\_\_\_\_\_.
 ```{r}
 library(tidyverse)
 library(readxl)
-county_data_2_ <- read_excel("data/county_data (2).xls", 
+county_data_2_ <- read_excel("county_data (2).xls", 
     sheet = "County")
-View(county_data_2_)
 ```
 
 Our data came in a "wide" format across years. So, we pivoted the variables of interest and merged them into a new dataset.
@@ -29,7 +28,6 @@ az_va <- county_data_2_ %>%
   mutate(POP00 = case_when(POP00 == "X" ~ NA))%>%
   select(CONAME, STATE_CD, METRO, URBCODE, 
          starts_with("POP0"), starts_with("PRGNUM0"), starts_with("PRGBEN0"))
-View(az_va)
 ```
 
 The dataset did not have unique identifier for year and county, which we wanted to be our unit of analysis, so we created a unique variable for this within the "long" dataset for each variable of interest.
@@ -60,7 +58,6 @@ pop_longer <- az_va %>%
                              CONAME,
                              sep= "_")) %>%
   select(county_year, population)
-View(pop_longer)
 
 #Population on SNAP per year per county
 snap_longer <- az_va %>%
@@ -87,12 +84,10 @@ snap_longer <- az_va %>%
                              CONAME,
                              sep= "_")) %>%
   select(county_year, snap_pop)
-View(snap_longer)
 #merge
 snap_pop_longer <- merge(x= pop_longer,
                     y= snap_longer,
                     by= "county_year")
-View(snap_pop_longer)
 #SNAP Benefits per year per county
 ben_longer <- az_va %>%
   select(CONAME, starts_with("PRGBEN")) %>%
@@ -118,7 +113,6 @@ ben_longer <- az_va %>%
                              CONAME,
                              sep= "_")) %>%
   select(county_year, benefits)
-View(ben_longer)
 ```
 
 Upon creating a "long" dataset for each variable of interest, we merged these into one longitudinal dataset. Since we had to make a unique identifier for county and year to merge the long datasets, we brought back the year, state, and county variables here.
@@ -133,7 +127,6 @@ all_longer <- all_longer %>%
   mutate(year= substr(county_year, 1, 4)) %>%
   mutate(state= str_sub(county_year, -2))%>%
   mutate(county= str_sub(county_year, 6, -3))
-View(all_longer)
 ```
 
 We were interested in how the population on SNAP changed over the years.
