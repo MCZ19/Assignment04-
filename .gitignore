@@ -3,7 +3,6 @@
 .RData
 .Ruserdata
 Assignment04-.Rproj
-Data/
-county_data (2).xls
+data/
 Conflicts/
 census_health.csv
