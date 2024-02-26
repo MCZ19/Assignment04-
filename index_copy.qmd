@@ -1,0 +1,235 @@
+---
+title: "Data Science for Public Policy"
+subtitle: "Assignment 04"
+author: "Mitchell - mcz19 & Hannah Shepard-Moore - hms98"
+execute:
+  warning: false
+format:
+  html:
+    embed-resources: true
+---
+
+# The Supplemental Nutrition Assistance Program (SNAP)
+
+For our project, we were interested in how the Supplemental Nutrition Assistance Program (SNAP) is used in the US.We wanted to explore what the usage looks like across time and in different types of counties. To do so, we used data from the USDA which had information on the number of program beneficiaries, the benefits they received, and information about where and when it was used.
+
+### The Data
+
+The data used in this assignment comes from the US Department of Agriculture (USDA) Economic Research Service. The data and documentation can be found here: https://www.ers.usda.gov/data-products/supplemental-nutrition-assistance-program-snap-data-system/documentation/
+
+Below is the code used to upload and read in this data. We specified the "County" tab because the Excel data came with several tabs including notes and state-level data.
+
+```{r}
+library(tidyverse)
+library(readxl)
+county_data_2_ <- read_excel("county_data (2).xls", 
+    sheet = "County")
+```
+
+### Data Cleaning & Organization
+
+Our geographic locations of interest were Arizona and Virginia. In terms of variables of interest, these were the number of people using SNAP, the benefits used by those people, and the county population. We want to examine SNAP data across years as well as within years.
+
+The code below was used to create the geographic subset:
+
+```{r}
+az_va <- county_data_2_ %>%  
+  filter(STATE_CD== "AZ" | STATE_CD== "VA") %>%  
+  mutate(POP00 = case_when(POP00 == "X" ~ NA))%>%
+  select(CONAME, STATE_CD, METRO, URBCODE, 
+         starts_with("POP0"), starts_with("PRGNUM0"), starts_with("PRGBEN0"))
+```
+
+Unfortunately, our data came in a "wide" format across years. So, in order to explore longitudinal data, we pivoted the variables of interest and merged them into a new dataset.
+
+The dataset did not have unique identifier for year and county, which we wanted to be our unit of analysis, so we created a unique variable for this within the "long" dataset for each variable of interest.
+
+```{r}
+#Population per year per county
+pop_longer <- az_va %>% 
+  select(CONAME, starts_with("POP0")) %>%
+  pivot_longer(
+    cols = starts_with("POP0"),
+    names_to = "pop_year",
+    values_to = "population",
+    values_drop_na = TRUE) %>%
+  mutate(year= case_when(pop_year == "POP01" ~ 2001,
+                         pop_year == "POP02" ~ 2002,
+                         pop_year == "POP03" ~ 2003,
+                         pop_year == "POP04" ~ 2004,
+                         pop_year == "POP05" ~ 2005,
+                         pop_year == "POP06" ~ 2006,
+                         pop_year == "POP07" ~ 2007,
+                         pop_year == "POP08" ~ 2008,
+                         pop_year == "POP09" ~ 2009,
+                         pop_year == "POP10" ~ NA)) %>%
+  mutate(CONAME = str_replace(CONAME,
+                              " County, ",
+                              ""),
+         county_year = str_c(year,
+                             CONAME,
+                             sep= "_")) %>%
+  select(county_year, population)
+
+#Population on SNAP per year per county
+snap_longer <- az_va %>%
+  select(CONAME, starts_with("PRGNUM")) %>%
+  pivot_longer(
+    cols = starts_with("PRGNUM"),
+    names_to = "snap_pop_year",
+    values_to = "snap_pop",
+    values_drop_na = TRUE) %>%
+  mutate(year= case_when(snap_pop_year == "PRGNUM00" ~ 2000,
+                         snap_pop_year == "PRGNUM01" ~ 2001,
+                         snap_pop_year == "PRGNUM02" ~ 2002,
+                         snap_pop_year == "PRGNUM03" ~ 2003,
+                         snap_pop_year == "PRGNUM04" ~ 2004,
+                         snap_pop_year == "PRGNUM05" ~ 2005,
+                         snap_pop_year == "PRGNUM06" ~ 2006,
+                         snap_pop_year == "PRGNUM07" ~ 2007,
+                         snap_pop_year == "PRGNUM08" ~ 2008,
+                         snap_pop_year == "PRGNUM09" ~ 2009)) %>%
+  mutate(CONAME = str_replace(CONAME,
+                              " County, ",
+                              ""),
+         county_year = str_c(year,
+                             CONAME,
+                             sep= "_")) %>%
+  select(county_year, snap_pop)
+#merge
+snap_pop_longer <- merge(x= pop_longer,
+                    y= snap_longer,
+                    by= "county_year")
+#SNAP Benefits per year per county
+ben_longer <- az_va %>%
+  select(CONAME, starts_with("PRGBEN")) %>%
+  pivot_longer(
+    cols = starts_with("PRGBEN"),
+    names_to = "ben_year",
+    values_to = "benefits",
+    values_drop_na = TRUE) %>%
+  mutate(year= case_when(ben_year == "PRGBEN00" ~ 2000,
+                         ben_year == "PRGBEN01" ~ 2001,
+                         ben_year == "PRGBEN02" ~ 2002,
+                         ben_year == "PRGBEN03" ~ 2003,
+                         ben_year == "PRGBEN04" ~ 2004,
+                         ben_year == "PRGBEN05" ~ 2005,
+                         ben_year == "PRGBEN06" ~ 2006,
+                         ben_year == "PRGBEN07" ~ 2007,
+                         ben_year == "PRGBEN08" ~ 2008,
+                         ben_year == "PRGBEN09" ~ 2009))%>%
+  mutate(CONAME = str_replace(CONAME,
+                              " County, ",
+                              ""),
+         county_year = str_c(year,
+                             CONAME,
+                             sep= "_")) %>%
+  select(county_year, benefits)
+```
+
+Upon creating a "long" dataset for each variable of interest, we merged these into one longitudinal dataset. Since we had to make a unique identifier for county and year to merge the long datasets, we brought back the year, state, and county variables here.
+
+```{r}
+#merge all + add back data
+all_longer <- inner_join(x= snap_pop_longer,
+                         y= ben_longer,
+                         by= "county_year")
+#bring back year by taking out first 4 digits of county_year var
+all_longer <- all_longer %>% 
+  mutate(year= substr(county_year, 1, 4)) %>%
+  mutate(state= str_sub(county_year, -2))%>%
+  mutate(county= str_sub(county_year, 6, -3))
+```
+
+## Visualizing the Data
+
+We were interested in how the population on SNAP changed over the years in different types of counties. Since Arizona was a state of interest, we visualized the population on SNAP in each Arizona County from 2001 to 2009. While the data does not account for population size, we can see clearly where SNAP recipients most commonly live in Arizona.
+
+```{r}
+#snap pop by county
+all_longer %>%
+  filter(state == "AZ") %>%
+  ggplot(mapping= aes(x= county,
+                       y= snap_pop)) +
+           geom_bar(color = "blue3", fill="blue3" ,stat = "identity", width = .5) +
+  scale_y_continuous(name = "SNAP Recipients", breaks = c(100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000)) +
+  labs(title = "SNAP Population by County in Arizona",
+       subtitle = "Total SNAP Recipients by County from 2001-2009",
+       x = "County" ,
+       caption = "Data Source: USDA") +
+  theme_minimal()
+```
+
+We used a heatmap to look at changes over time in the percent of snap recipients by county. We noticed in the prior bar graph that in Arizona, Maricopa County had far more snap recipients than other counties. By looking at the ratio between the snap population and the total county population, we found that just because aggregate numbers are high does not mean that the percentage is. Apache instead has the most SNAP residents as a percent of residents. Maricopa, Arizona's largest county has a relatively low percentage of SNAP recipients when compared to other counties within the state. Were we deciding what county to target with an intervention related to SNAP, this information would be helpful in determining where money or new strategies could be tested. I would tend to invest more heavily in areas like Apache and Navajo where the problem appears more pronounced.
+
+```{r}
+library(hrbrthemes)
+
+all_longer %>% 
+  filter(state == "AZ") %>%
+  mutate(snap_ratio = snap_pop/population) %>%
+  ggplot(aes(x = year, y = county, fill = snap_ratio)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue4") +
+  labs(title = "Proportion of County Residents on SNAP in Arizona",
+       subtitle = "A Greater Proportion of Apache and Navajo County Residents are on SNAP ",
+       x = "Year",
+       y = "County",
+       caption = "Date Source: USDA") + 
+  theme_light()
+```
+
+Most of our visualization look at the county level. However, state differences are also important to understand. Since we both live in Northern Virginia, we compared SNAP in the Arizona context to the more familiar Virginia context.
+
+The graph below has been focused at lower numbers as Arizona county benefits has some substantial outliers which were more apparent when using a jitter geom. It is clear that Arizona has paid out substantially more than Virginia in benefits on an average basis over the years. This may mean that Virginia has more opportunities vis-a-vis employment, education, etc. It could also be because the federal government may be offering more assistance to Arizona as is the case in certain programs like the Medicaid FMAP rate. This is an aggregate with little nuance but it is still informative to begin an approach by looking at a problem broadly and then focusing in closer and closer.
+
+```{r}
+all_longer %>%
+  ggplot(aes(x = state, y = benefits, fill = state)) + 
+  geom_boxplot() +
+   scale_y_continuous(limits = c(0, 100000)) +
+  labs(title = "Arizona Paid More in Benefits than Virginia Between 2001-2009",
+       subtitle = "Arizona Counties had Substantially More Outliers Compared to the State Average",
+       x ="State" ,
+       y = "SNAP Benefits",
+       caption = "Date Source: USDA")
+```
+
+As mentioned, since we live in Northern VA, we wanted to explore the history of SNAP benefits specifically in this area as well. One question we had was: "How did SNAP benefits change around the time of the 2008 recession?". The below graph shows how benefits trended before the recession in 5 'NOVA' counties and how they changed after 2008.
+
+```{r}
+#snap use over time
+all_longer %>%
+  filter(state == "VA",
+         snap_pop >= 0,
+         population > 0,
+         county== "Arlington" | 
+           county== "Fairfax" |
+           county== "Fauquier" |
+           county== "Loudoun" |
+           county== "Prince William") %>%
+  mutate(ben_share= benefits / population) %>%
+  ggplot(mapping= aes(x= year,
+                      y= ben_share, 
+                      color= county))+
+  geom_point()+
+  geom_line(aes(group= county))+
+  theme_light()+
+  scale_color_manual(name= "",
+                     values= c("Arlington" = "brown1",
+                               "Fairfax" = "goldenrod1",
+                               "Fauquier"= "darkolivegreen1",
+                               "Loudoun"= "dodgerblue2",
+                               "Prince William"= "mediumorchid2"),
+                     labels= c("Arlington" = "Arlington County",
+                               "Fairfax" = "Fairfax County",
+                               "Loudoun" = "Loudon County",
+                               "Fauquier" = "Fauquier County",
+                               "Prince William" = "Prince William County"))+
+  labs(title= "Northern VA counties saw a spike in SNAP benefits per capita after 2008",
+       subtitle= "SNAP benefits were trending slightly up before the recession started.",
+       caption= "Source: US Department of Agriculture",
+       x= "",
+       y= "SNAP benefits per capita")
+
+```
