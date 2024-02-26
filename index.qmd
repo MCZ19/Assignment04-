@@ -33,7 +33,7 @@ az_va <- county_data_2_ %>%
          starts_with("POP0"), starts_with("PRGNUM0"), starts_with("PRGBEN0"))
 ```
 
-Unfortunately, our data came in a "wide" format across years. So, in order to explore longitudinal data, we pivoted the variables of interest and merged them into a new dataset. 
+Unfortunately, our data came in a "wide" format across years. So, in order to explore longitudinal data, we pivoted the variables of interest and merged them into a new dataset.
 
 The dataset did not have unique identifier for year and county, which we wanted to be our unit of analysis, so we created a unique variable for this within the "long" dataset for each variable of interest.
 
@@ -147,11 +147,12 @@ all_longer %>%
   labs(title = "SNAP Population by County in Arizona",
        subtitle = "Total SNAP Recipients by County from 2001-2009",
        x = "County" ,
-       caption = "Data Source: USDA")
+       caption = "Data Source: USDA") +
   theme_minimal()
 ```
 
-Heatmap
+We used a heatmap to look at changes over time in the percent of snap recipients by county. We noticed in the prior bar graph that in Arizona, Maricopa County had far more snap recipients than other counties. By looking at the ratio between the snap population and the total county population, we found that just because aggregate numbers are high does not mean that the percentage is. Apache instead has the most SNAP residents as a percent of residents. Maricopa, Arizona's largest county has a relatively low percentage of SNAP recipients when compared to other counties within the state. Were we deciding what county to target with an intervention related to SNAP, this information would be helpful in determining where money or new strategies could be tested. I would tend to invest more heavily in areas like Apache and Navajo where the problem appears more pronounced.  
+
 ```{r}
 library(hrbrthemes)
 
@@ -165,12 +166,12 @@ all_longer %>%
        subtitle = "A Greater Proportion of Apache and Navajo County Residents are on SNAP ",
        x = "Year",
        y = "County",
-       caption = "Date Source: USDA")
+       caption = "Date Source: USDA") + 
   theme_light()
 ```
 
-
 Since we live in Northern VA, we explored the history of SNAP benefits in this area. One question we had was: "How did SNAP benefits change around the time of the 2008 recession?". The below graph shows how benefits trended before the recession in 5 'NOVA' counties and how they changed after 2008.
+
 ```{r}
 #snap use over time
 all_longer %>%
@@ -208,16 +209,16 @@ all_longer %>%
 
 ```
 
-Box Graph
+Most of our visualization look at the county level in either Arizona or Virginia. However, state differences are also important to understand. The graph below has been focused at lower numbers as Arizona county benefits has some substantial outliers which were more apparent when using a jitter geom. It is clear that Arizona has paid out substantially more than Virginia in benefits on an average basis over the years. This may mean that Virginia has more opportunities vis-a-vis employment, education, etc. It could also be because the federal government may be offering more assistance to Arizona as is the case in certain programs like the Medicaid FMAP rate.This is an aggregate with little nuance but it is still informative to begin an approach by looking at a problem broadly and then focusing in closer and closer.      
+
 ```{r}
 all_longer %>%
   ggplot(aes(x = state, y = benefits, fill = state)) + 
   geom_boxplot() +
-  geom_jitter() +
+   scale_y_continuous(limits = c(0, 100000)) +
   labs(title = "Arizona Paid More in Benefits than Virginia Between 2001-2009",
        subtitle = "Arizona Counties had Substantially More Outliers Compared to the State Average",
        x ="State" ,
        y = "SNAP Benefits",
        caption = "Date Source: USDA")
 ```
-
