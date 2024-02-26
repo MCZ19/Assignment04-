@@ -9,32 +9,147 @@ format:
     embed-resources: true
 ---
 
-
+The data used in this assignment comes from ______.
 ```{r}
 library(tidyverse)
 library(readxl)
-county_data_2_ <- read_excel("data/county_data (2).xls", 
-    sheet = "County")
+county_data_2_ <- read_excel("county_data (2).xls", 
+                             sheet = "County")
 View(county_data_2_)
-pop_longer <- county_data_2_ %>% 
-  mutate(POP00 = case_when(POP00 == "X" ~ NA))%>%
-  pivot_longer(
-  cols = starts_with("POP"),
-  names_to = "year",
-  values_to = "population",
-  values_drop_na = TRUE
-))
-
-ggplot(data = pop_longer, 
-       mapping= aes(x= year, y= population)+
-         geom_tile()
 ```
 
-You can add options to executable code like this
+Our data came in a "wide" format across years. So, we pivoted the variables of interest and merged them into a new dataset. 
+```{r}
+##Creating another subset of data with basic data and pop, snap pop & benefits
+## and unique identifier for year/county
+az_va <- county_data_2_ %>%  
+  filter(STATE_CD== "AZ" | STATE_CD== "VA") %>%  
+  mutate(POP00 = case_when(POP00 == "X" ~ NA))%>%
+  select(CONAME, STATE_CD, METRO, URBCODE, 
+         starts_with("POP0"), starts_with("PRGNUM0"), starts_with("PRGBEN0"))
+View(az_va)
+#pop & year
+pop_longer <- az_va %>% 
+  select(CONAME, starts_with("POP0")) %>%
+  pivot_longer(
+    cols = starts_with("POP0"),
+    names_to = "pop_year",
+    values_to = "population",
+    values_drop_na = TRUE) %>%
+  mutate(year= case_when(pop_year == "POP01" ~ 2001,
+                         pop_year == "POP02" ~ 2002,
+                         pop_year == "POP03" ~ 2003,
+                         pop_year == "POP04" ~ 2004,
+                         pop_year == "POP05" ~ 2005,
+                         pop_year == "POP06" ~ 2006,
+                         pop_year == "POP07" ~ 2007,
+                         pop_year == "POP08" ~ 2008,
+                         pop_year == "POP09" ~ 2009,
+                         pop_year == "POP10" ~ NA)) %>%
+  mutate(CONAME = str_replace(CONAME,
+                              " County, ",
+                              ""),
+         county_year = str_c(year,
+                             CONAME,
+                             sep= "_")) %>%
+  select(county_year, population)
+View(pop_longer)
+#snap & year
+snap_longer <- az_va %>%
+  select(CONAME, starts_with("PRGNUM")) %>%
+  pivot_longer(
+    cols = starts_with("PRGNUM"),
+    names_to = "snap_pop_year",
+    values_to = "snap_pop",
+    values_drop_na = TRUE) %>%
+  mutate(year= case_when(snap_pop_year == "PRGNUM00" ~ 2000,
+                         snap_pop_year == "PRGNUM01" ~ 2001,
+                         snap_pop_year == "PRGNUM02" ~ 2002,
+                         snap_pop_year == "PRGNUM03" ~ 2003,
+                         snap_pop_year == "PRGNUM04" ~ 2004,
+                         snap_pop_year == "PRGNUM05" ~ 2005,
+                         snap_pop_year == "PRGNUM06" ~ 2006,
+                         snap_pop_year == "PRGNUM07" ~ 2007,
+                         snap_pop_year == "PRGNUM08" ~ 2008,
+                         snap_pop_year == "PRGNUM09" ~ 2009)) %>%
+  mutate(CONAME = str_replace(CONAME,
+                              " County, ",
+                              ""),
+         county_year = str_c(year,
+                             CONAME,
+                             sep= "_")) %>%
+  select(county_year, snap_pop)
+View(snap_longer)
+#merge
+snap_pop_longer <- merge(x= pop_longer,
+                    y= snap_longer,
+                    by= "county_year")
+View(snap_pop_longer)
+#benefits
+ben_longer <- az_va %>%
+  select(CONAME, starts_with("PRGBEN")) %>%
+  pivot_longer(
+    cols = starts_with("PRGBEN"),
+    names_to = "ben_year",
+    values_to = "benefits",
+    values_drop_na = TRUE) %>%
+  mutate(year= case_when(ben_year == "PRGBEN00" ~ 2000,
+                         ben_year == "PRGBEN01" ~ 2001,
+                         ben_year == "PRGBEN02" ~ 2002,
+                         ben_year == "PRGBEN03" ~ 2003,
+                         ben_year == "PRGBEN04" ~ 2004,
+                         ben_year == "PRGBEN05" ~ 2005,
+                         ben_year == "PRGBEN06" ~ 2006,
+                         ben_year == "PRGBEN07" ~ 2007,
+                         ben_year == "PRGBEN08" ~ 2008,
+                         ben_year == "PRGBEN09" ~ 2009))%>%
+  mutate(CONAME = str_replace(CONAME,
+                              " County, ",
+                              ""),
+         county_year = str_c(year,
+                             CONAME,
+                             sep= "_")) %>%
+  select(county_year, benefits)
+View(ben_longer)
+
+#merge all + add back data
+all_longer <- inner_join(x= snap_pop_longer,
+                         y= ben_longer,
+                         by= "county_year")
+#bring back year by taking out first 4 digits of county_year var
+all_longer <- all_longer %>% 
+  mutate(year= substr(county_year, 1, 4)) %>%
+  mutate(state= str_sub(county_year, -2))%>%
+  mutate(county= str_sub(county_year, 6, -3))
+View(all_longer)
+```
+
+We were interested in how the population on SNAP changed over the years.
+```{r}
+library(dplyr)
+library(tidyr)
+#snap pop by county
+all_longer %>%
+  filter(state == "AZ") %>%
+  ggplot(mapping= aes(x= county,
+                       y= snap_pop)) +
+           geom_bar(stat = "identity")
+```
 
 ```{r}
-#| echo: false
-2 * 2
+#snap use over time
+all_longer %>%
+  filter(state == "VA",
+         snap_pop >= 0,
+         population > 0) %>%
+  mutate(snap_share= snap_pop / population) %>%
+  ggplot(mapping= aes(x= year,
+                      y= snap_share))+
+  geom_bar()
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+
+
+
+
+
