@@ -3,4 +3,6 @@
 .RData
 .Ruserdata
 Assignment04-.Rproj
-
+data
+Conflicts
+*.xls
