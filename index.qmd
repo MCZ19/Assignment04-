@@ -149,6 +149,23 @@ all_longer %>%
   theme_minimal()
 ```
 
+Heatmap
+```{r}
+library(hrbrthemes)
+
+all_longer %>% 
+  filter(state == "AZ") %>%
+  mutate(snap_ratio = snap_pop/population) %>%
+  ggplot(aes(x = year, y = county, fill = snap_ratio)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue4") +
+  labs(title = "Proportion of County Residents on SNAP in Arizona",
+       subtitle = "A Greater Proportion of Apache and Navajo County Residents are on SNAP ",
+       caption = "Date Source: USDA")
+  theme_light()
+```
+
+
 Since we live in Northern VA, we explored the history of SNAP benefits in this area. One question we had was: "How did SNAP benefits change around the time of the 2008 recession?". The below graph shows how benefits trended before the recession in 5 'NOVA' counties and how they changed after 2008.
 ```{r}
 #snap use over time
@@ -186,3 +203,15 @@ all_longer %>%
        y= "SNAP benefits per capita")
 
 ```
+
+Box Graph
+```{r}
+all_longer %>%
+  ggplot(aes(x = state, y = benefits, fill = state)) + 
+  geom_boxplot() +
+  geom_jitter() +
+  labs(title = "Arizona Paid More in Benefits than Virginia Between 2001-2009",
+       subtitle = "Arizona Counties had Substantially More Outliers Compared to the State Average",
+       caption = "Date Source: USDA")
+```
+
