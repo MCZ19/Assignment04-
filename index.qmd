@@ -16,7 +16,7 @@ Below is the code used to upload and read in this data. We specified the "County
 ```{r}
 library(tidyverse)
 library(readxl)
-county_data_2_ <- read_excel("data/county_data (2).xls", 
+county_data_2_ <- read_excel("county_data (2).xls", 
     sheet = "County")
 View(county_data_2_)
 ```
@@ -153,6 +153,7 @@ all_longer %>%
 
 Heatmap
 ```{r}
+install.packages("hrbrthemes")
 library(hrbrthemes)
 
 all_longer %>% 
@@ -165,7 +166,7 @@ all_longer %>%
        subtitle = "A Greater Proportion of Apache and Navajo County Residents are on SNAP ",
        x = "Year",
        y = "County",
-       caption = "Date Source: USDA")
+       caption = "Date Source: USDA")+
   theme_light()
 ```
 
